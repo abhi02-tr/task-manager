@@ -89,7 +89,6 @@ router.get("/me", auth, async (req, res) => {
   try {
     res.send(req.user);
   } catch (err) {
-    console.log(err);
     res.status(500).json(err);
   }
 });
