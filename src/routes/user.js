@@ -23,7 +23,7 @@ router.post("/", async (req, res) => {
       age,
     });
     await user.save();
-
+    console.log(user);
     // sending mail
     sendWelcomeEmail(user.email, user.userName);
 

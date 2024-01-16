@@ -17,6 +17,10 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan("dev"));
 
+app.get("/", (req, res) => {
+  res.send("Production commit");
+});
+
 app.use("/api/user", userRouter);
 app.use("/api/task", taskRouter);
 
