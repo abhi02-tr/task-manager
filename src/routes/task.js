@@ -1,4 +1,6 @@
 const express = require("express");
+const multer = require("multer");
+const sharp = require("sharp");
 
 const Task = require("../models/task.js");
 const { auth } = require("../middleware/auth.js");
@@ -116,6 +118,80 @@ router.delete("/:id", auth, async (req, res) => {
     }
 
     res.json(task);
+  } catch (err) {
+    res.status(500).json(err);
+  }
+});
+
+const upload = multer({
+  limits: {
+    fileSize: 1000000,
+  },
+  fileFilter(req, file, cb) {
+    if (!file.originalname.match(/\.(png|jpeg|jpg)/)) {
+      return cb(new Error("Please upload an image."));
+    }
+    cb(undefined, true);
+  },
+});
+
+router.post("/:id/img", auth, upload.single("img"), async (req, res) => {
+  try {
+    // console.log(req.params.id);
+    // console.log(req.file);
+    const buffer = await sharp(req.file.buffer)
+      .resize({
+        height: 100,
+        width: 100,
+      })
+      .png()
+      .toBuffer();
+
+    const task = await Task.findOne({
+      _id: req.params.id,
+      owner: req.user._id,
+    });
+
+    if (!task) {
+      throw new Error("No task found.");
+    }
+
+    task.img = buffer;
+    await task.save();
+
+    res.json({ message: "Task added successfully." });
+  } catch (err) {
+    res.status(400).json(err);
+  }
+});
+
+router.get("/:id/img", async (req, res) => {
+  try {
+    const task = await Task.findOne({ _id: req.params.id });
+    if (!task) {
+      throw new Error("Task image is not found.");
+    }
+
+    // Header setting
+    res.set("Content-Type", "image/jpg");
+    res.send(task.img);
+  } catch (err) {
+    res.status(400).json(err);
+  }
+});
+
+router.delete("/:id/img", auth, async (req, res) => {
+  try {
+    const task = await Task.findOne({ _id: req.params.id });
+
+    if (!task) {
+      throw new Error("Unable to find Task.");
+    }
+
+    task.img = undefined;
+    await task.save();
+
+    res.json({ message: "Task image deleted successfully." });
   } catch (err) {
     res.status(500).json(err);
   }
